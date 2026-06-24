@@ -36,7 +36,9 @@ public abstract class TestBlockingTreeUtil<S, D, R, C, T> {
     private int maxDepth = 1;
     private int totalNodes = 0;
     private static String TEST_FILE = "test.csv";
+    private static String LARGE_TEST_FILE = "test_large.csv";
     private static String CONFIG_FILE = "config.json";
+    private static String LARGE_CONFIG_FILE = "config_large.json";
     private final DataUtility dataUtility;
 
     public TestBlockingTreeUtil() {
@@ -71,6 +73,36 @@ public abstract class TestBlockingTreeUtil<S, D, R, C, T> {
     }
 
 
+    @Test
+    public void testLargeDeepBlockingTree() throws Exception, ZinggClientException {
+        setTestDataBaseLocation();
+        List<Customer> testCustomers = dataUtility.getCustomers(TEST_DATA_BASE_LOCATION + "/" + LARGE_TEST_FILE);
+        List<CustomerDupe> testCustomerDupes = dataUtility.getCustomerDupes(TEST_DATA_BASE_LOCATION + "/" + LARGE_TEST_FILE, false);
+        DFObjectUtil<S, D, R, C> dfObjectUtil = getDFObjectUtil();
+
+        ZFrame<D, R, C> zFrameTest = dfObjectUtil.getDFFromObjectList(testCustomers, Customer.class);
+        ZFrame<D, R, C> zFramePositives = dfObjectUtil.getDFFromObjectList(testCustomerDupes, CustomerDupe.class);
+
+        HashUtil<S, D, R, C, T> hashUtil = getHashUtil();
+        String configFile = Objects.requireNonNull(getClass().getClassLoader().getResource(TEST_DATA_BASE_LOCATION + "/" + LARGE_CONFIG_FILE)).getFile();
+        IArguments args = new ArgumentServiceImpl<Arguments>(Arguments.class).loadArguments(configFile);
+
+        System.out.println("=== STARTING LARGE DEEP BLOCKING TREE TEST ===");
+        Tree<Canopy<R>> blockingTreeDefault = getBlockingTree(zFrameTest, zFramePositives, hashUtil, args, "default");
+        Tree<Canopy<R>> blockingTreeCached = getBlockingTree(zFrameTest, zFramePositives, hashUtil, args, "cached");
+        Assertions.assertTrue(dfsSameTreeValidation(blockingTreeDefault, blockingTreeCached, 1));
+        System.out.println("-------- max depth of trees -------- " + maxDepth);
+        System.out.println("-------- total nodes in a trees ---- " + totalNodes);
+
+        maxDepth = 1; totalNodes = 0;
+        Tree<Canopy<R>> blockingTreeDefault2 = getBlockingTree(zFrameTest, zFramePositives, hashUtil, args, "default");
+        Tree<Canopy<R>> blockingTreeCached2 = getBlockingTree(zFrameTest, zFramePositives, hashUtil, args, "cached");
+        System.out.println("=== ENDING LARGE DEEP BLOCKING TREE TEST ===");
+        Assertions.assertTrue(dfsSameTreeValidation(blockingTreeDefault2, blockingTreeCached2, 1));
+        System.out.println("-------- max depth of trees -------- " + maxDepth);
+        System.out.println("-------- total nodes in a trees ---- " + totalNodes);
+    }
+
     public void testSameBlockingTree(ZFrame<D, R, C> zFrameTest, ZFrame<D, R, C> zFramePositives) throws Exception, ZinggClientException {
         setTestDataBaseLocation();
         HashUtil<S, D, R, C, T> hashUtil = getHashUtil();
@@ -94,15 +126,23 @@ public abstract class TestBlockingTreeUtil<S, D, R, C, T> {
     private Tree<Canopy<R>> getBlockingTree(ZFrame<D, R, C> zFrameTest, ZFrame<D, R, C> zFramePositives, HashUtil<S, D, R, C, T> hashUtil,
                                          IArguments args, String blockingTreeType) throws Exception, ZinggClientException {
         long ts = System.currentTimeMillis();
+        long startGetBlock = System.nanoTime();
         Block<D, R, C, T> block;
         if ("cached".equals(blockingTreeType)) {
             block = getCachedBasedBlock(zFrameTest, zFramePositives, hashUtil, args);
         } else {
             block = getDefaultBlock(zFrameTest, zFramePositives, hashUtil, args);
         }
+        double getBlockMs = (System.nanoTime() - startGetBlock) / 1_000_000.0;
+
+        long startGetCanopy = System.nanoTime();
         Canopy<R> root = getCanopy(zFrameTest, zFramePositives, 1);
+        double getCanopyMs = (System.nanoTime() - startGetCanopy) / 1_000_000.0;
+
         Tree<Canopy<R>> blockingTree = block.getBlockingTree(null, null, root, getFieldDefinitions(args));
         System.out.println("************ time taken to create " + blockingTreeType + " blocking tree ************, " + (System.currentTimeMillis() - ts));
+        System.out.println("[TEST] getBlock          :                          time=" + getBlockMs + " ms");
+        System.out.println("[TEST] getCanopy         :                          time=" + getCanopyMs + " ms");
         return blockingTree;
     }
 

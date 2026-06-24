@@ -29,7 +29,9 @@ public class SparkSessionProvider {
                 SparkSession.Builder builder = SparkSession
                         .builder()
                         .master("local[*]")
-                        .appName("ZinggJunit");
+                        .appName("ZinggJunit")
+                        .config("spark.driver.bindAddress", "127.0.0.1")
+                        .config("spark.driver.host", "127.0.0.1");
                 Properties props = new Properties();
                 props.load(getClass().getResourceAsStream("/zingg.properties"));
                 for (String key : props.stringPropertyNames()) {
@@ -50,8 +52,7 @@ public class SparkSessionProvider {
                 zinggSparkContext = new ZinggSparkContext();
                 zinggSparkContext.init(sparkSession);
             } catch (Throwable e) {
-                if (LOG.isDebugEnabled())
-                    e.printStackTrace();
+                e.printStackTrace(System.err);
                 LOG.info("Problem in spark env setup");
             }
         } else {

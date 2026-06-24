@@ -9,4 +9,6 @@ public interface IHashFunctionUtility<D, R, C, T> {
     void addHashFunctionIfRequired(Canopy<R> node);
 
     void removeHashFunctionIfRequired(Canopy<R> node);
+
+    void logTotalTime();
 }
