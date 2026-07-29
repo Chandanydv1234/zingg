@@ -1,58 +1,57 @@
-{	
+{
 	"fieldDefinition":[
 		{
 			"fieldName" : "recid",
 			"matchType" : "dont_use",
 			"fields" : "recid",
-			"dataType": "string" 
+			"dataType": "string"
 		},
 		{
 			"fieldName" : "givenname",
 			"matchType" : "fuzzy",
 			"fields" : "givenname",
-			"dataType": "string" 
+			"dataType": "string"
 		},
 		{
 			"fieldName" : "surname",
 			"matchType": "exact",
 			"fields" : "surname",
-			"dataType": "string" 
+			"dataType": "string"
 		},
 		{
 			"fieldName" : "suburb",
 			"matchType": "fuzzy",
 			"fields" : "suburb",
-			"dataType": "string" 
+			"dataType": "string"
 		},
 		{
 			"fieldName" : "postcode",
 			"matchType": "exact",
 			"fields" : "postcode",
-			"dataType": "string" 
+			"dataType": "string"
 		}
-		],
-		"output" : [{
-			"name":"output", 
-			"format":"csv", 
-			"props": {
-				"path": "/tmp/zinggOutput",
-				"delimiter": ",",
-				"header":true
-			}
-		}],
-		"data" : [{
-			"name":"test", 
-			"format":"csv", 
-			"props": {
-				"path": "examples/ncVoters5M/5Party-ocp20/",
-				"delimiter": ",",
-				"header":false					
-			},
-			"schema": "recid string, givenname string, surname string, suburb string, postcode string"
-		}],
-		"labelDataSampleSize" : 0.1,
-		"numPartitions":4000,
-		"modelId": 104,
-		"zinggDir": "models"
-
+	],
+	"output" : [{
+		"name":"OUTPUT_NCVOTERS5M",
+		"format":"csv",
+		"props": {
+			"path": "/tmp/zinggOutput",
+			"delimiter": ",",
+			"header":true
+		}
+	}],
+	"data" : [{
+		"name":"test",
+		"format":"csv",
+		"props": {
+			"path": "examples/ncVoters5M/5Party-ocp20/",
+			"delimiter": ",",
+			"header":false
+		},
+		"schema": "recid string, givenname string, surname string, suburb string, postcode string"
+	}],
+	"labelDataSampleSize" : 0.01,
+	"numPartitions":32,
+	"modelId": 104,
+	"zinggDir": "models"
 }

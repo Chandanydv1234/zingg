@@ -11,6 +11,7 @@ import zingg.common.client.arguments.model.IArguments;
 import zingg.common.client.MatchTypes;
 import zingg.common.client.ZFrame;
 import zingg.common.client.ZinggClientException;
+import zingg.common.client.util.ColName;
 import zingg.common.client.util.DFObjectUtil;
 import zingg.common.client.util.ListMap;
 import zingg.common.core.block.data.DataUtility;
@@ -23,6 +24,7 @@ import zingg.common.core.util.HashUtil;
 import zingg.common.core.util.Heuristics;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -68,6 +70,32 @@ public abstract class TestBlockingTreeUtil<S, D, R, C, T> {
         ZFrame<D, R, C> zFramePositives = dfObjectUtil.getDFFromObjectList(testCustomerDupes, CustomerDupe.class);
 
         testSameBlockingTree(zFrameTest, zFramePositives);
+    }
+
+    // getBlockHashes runs every row through the tree. On Spark the tree now comes
+    // from a broadcast (issue #1352), so this checks that path still tags each row
+    // with a hash and drops none.
+    @Test
+    public void testGetBlockHashes() throws Exception, ZinggClientException {
+        List<Customer> testCustomers = dataUtility.getCustomers(TEST_DATA_BASE_LOCATION + "/" + TEST_FILE);
+        List<CustomerDupe> testCustomerDupes = dataUtility.getCustomerDupes(TEST_DATA_BASE_LOCATION + "/" + TEST_FILE, false);
+        DFObjectUtil<S, D, R, C> dfObjectUtil = getDFObjectUtil();
+
+        ZFrame<D, R, C> zFrameTest = dfObjectUtil.getDFFromObjectList(testCustomers, Customer.class);
+        ZFrame<D, R, C> zFramePositives = dfObjectUtil.getDFFromObjectList(testCustomerDupes, CustomerDupe.class);
+
+        String configFile = Objects.requireNonNull(getClass().getClassLoader().getResource(TEST_DATA_BASE_LOCATION + "/" + CONFIG_FILE)).getFile();
+        IArguments args = new ArgumentServiceImpl<Arguments>(Arguments.class).loadArguments(configFile);
+        args.setBlockSize(8);
+
+        BlockingTreeUtil<S, D, R, C, T> blockingTreeUtil = getBlockingTreeUtil();
+        Tree<Canopy<R>> tree = blockingTreeUtil.createBlockingTreeFromSample(zFrameTest, zFramePositives, 1, -1,
+                args, getHashUtil().getHashFunctionList());
+
+        ZFrame<D, R, C> blocked = blockingTreeUtil.getBlockHashes(zFrameTest, tree);
+
+        Assertions.assertTrue(Arrays.asList(blocked.columns()).contains(ColName.HASH_COL));
+        Assertions.assertEquals(zFrameTest.count(), blocked.count());
     }
 
 

@@ -1,0 +1,44 @@
+{
+	"fieldDefinition":[
+		{ "fieldName" : "REC_ID",          "matchType" : "dont_use", "fields" : "REC_ID",          "dataType": "string" },
+		{ "fieldName" : "GIVEN_NAME",      "matchType" : "fuzzy,null_or_blank", "fields" : "GIVEN_NAME", "dataType": "string" },
+		{ "fieldName" : "SURNAME",         "matchType" : "fuzzy",    "fields" : "SURNAME",         "dataType": "string" },
+		{ "fieldName" : "STREET_NUMBER",   "matchType" : "fuzzy",    "fields" : "STREET_NUMBER",   "dataType": "string" },
+		{ "fieldName" : "ADDRESS_1",       "matchType" : "fuzzy",    "fields" : "ADDRESS_1",       "dataType": "string" },
+		{ "fieldName" : "ADDRESS_2",       "matchType" : "fuzzy",    "fields" : "ADDRESS_2",       "dataType": "string" },
+		{ "fieldName" : "SUBURB",          "matchType" : "fuzzy",    "fields" : "SUBURB",          "dataType": "string" },
+		{ "fieldName" : "POSTCODE",        "matchType" : "fuzzy",    "fields" : "POSTCODE",        "dataType": "string" },
+		{ "fieldName" : "STATE",           "matchType" : "fuzzy",    "fields" : "STATE",           "dataType": "string" },
+		{ "fieldName" : "DATE_OF_BIRTH",   "matchType" : "fuzzy",    "fields" : "DATE_OF_BIRTH",   "dataType": "string" },
+		{ "fieldName" : "AGE",             "matchType" : "dont_use", "fields" : "AGE",             "dataType": "string" },
+		{ "fieldName" : "PHONE_NUMBER",    "matchType" : "fuzzy",    "fields" : "PHONE_NUMBER",    "dataType": "string" },
+		{ "fieldName" : "SOC_SEC_ID",      "matchType" : "fuzzy",    "fields" : "SOC_SEC_ID",      "dataType": "string" },
+		{ "fieldName" : "BLOCKING_NUMBER", "matchType" : "dont_use", "fields" : "BLOCKING_NUMBER", "dataType": "string" }
+	],
+	"output" : [{
+		"name":"zinggOutput301_5M",
+		"format":"parquet",
+		"props": { "path": "/tmp/zinggOutput_301_5M" }
+	}],
+	"data" : [
+		{
+			"name":"test1", "format":"csv",
+			"props": { "path": "examples/febrl5M/febrl_data_5M_part1.csv.gz", "delimiter": ",", "header": "true" },
+			"schema": "REC_ID string, GIVEN_NAME string, SURNAME string, STREET_NUMBER string, ADDRESS_1 string, ADDRESS_2 string, SUBURB string, POSTCODE string, STATE string, DATE_OF_BIRTH string, AGE string, PHONE_NUMBER string, SOC_SEC_ID string, BLOCKING_NUMBER string"
+		},
+		{
+			"name":"test2", "format":"csv",
+			"props": { "path": "examples/febrl5M/febrl_data_5M_part2.csv.gz", "delimiter": ",", "header": "false" },
+			"schema": "REC_ID string, GIVEN_NAME string, SURNAME string, STREET_NUMBER string, ADDRESS_1 string, ADDRESS_2 string, SUBURB string, POSTCODE string, STATE string, DATE_OF_BIRTH string, AGE string, PHONE_NUMBER string, SOC_SEC_ID string, BLOCKING_NUMBER string"
+		},
+		{
+			"name":"test3", "format":"csv",
+			"props": { "path": "examples/febrl5M/febrl_data_5M_part3.csv.gz", "delimiter": ",", "header": "false" },
+			"schema": "REC_ID string, GIVEN_NAME string, SURNAME string, STREET_NUMBER string, ADDRESS_1 string, ADDRESS_2 string, SUBURB string, POSTCODE string, STATE string, DATE_OF_BIRTH string, AGE string, PHONE_NUMBER string, SOC_SEC_ID string, BLOCKING_NUMBER string"
+		}
+	],
+	"labelDataSampleSize" : 0.001,
+	"numPartitions":200,
+	"modelId": 301,
+	"zinggDir": "/Users/zingg/Desktop/zingg/models"
+}
