@@ -1,0 +1,18 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace      # remove spaces at the end of the line
+      - id: end-of-file-fixer        # file ends with exactly one new line
+      - id: check-yaml
+      - id: check-merge-conflict
+
+  - repo: local
+    hooks:
+      - id: dependabot-config
+        name: dependabot.yml is generated from the poms
+        entry: python3 scripts/gen-dependabot.py --check
+        language: system
+        pass_filenames: false
+        # Re-check whenever a pom or the generated config changes.
+        files: '(pom\.xml|\.github/dependabot\.yml|scripts/gen-dependabot\.py)$'
