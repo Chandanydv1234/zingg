@@ -224,9 +224,11 @@ public abstract class Client<S,D,R,C,T> implements Serializable {
 					"Zingg Error ",
 						throwable.getMessage()));
 			}
-			LOG.warn("Apologies for this message. Zingg has encountered an error. "
-					+ throwable.getMessage());
-			if (LOG.isDebugEnabled()) throwable.printStackTrace();
+			// Log the throwable itself (not just getMessage()) so the full cause chain
+			// and stack trace are always recorded, at any log level. Previously only the
+			// top-level message was logged and the trace was gated behind isDebugEnabled(),
+			// so runs that were not at debug level lost the real error detail.
+			LOG.error("Apologies for this message. Zingg has encountered an error.", throwable);
 		}
 		finally {
 			cleanupAndExit(success, client);
