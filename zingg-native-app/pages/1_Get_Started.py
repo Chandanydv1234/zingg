@@ -154,7 +154,7 @@ if "notebook_paths" not in st.session_state:
 if st.button("Get notebooks", type="primary"):
     try:
         app_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        results = deploy_notebook_set(w, app_dir, BUNDLED_NOTEBOOKS, deploy_folder)
+        results = deploy_notebook_set(w, app_dir, BUNDLED_NOTEBOOKS, deploy_folder, user_email)
 
         for r in results:
             if r["error"]:

@@ -6,6 +6,7 @@ Shared Databricks SDK client and config helpers for all app pages.
 
 import io
 import os
+import posixpath
 import streamlit as st
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.core import Config
@@ -88,7 +89,8 @@ def restart_running_cluster(w: WorkspaceClient, cluster_id: str) -> str:
 
 
 def deploy_notebook_template(w: WorkspaceClient, template_local_path: str,
-                             target_folder: str, target_filename: str) -> tuple[str, bool]:
+                             target_folder: str, target_filename: str,
+                             email: str) -> tuple[str, bool]:
     """Deploys one bundled template notebook (a plain .ipynb file, tracked
     in this app's own Git repo alongside app.yaml, the JAR, etc.) to
     target_folder/target_filename in the Workspace.
@@ -102,11 +104,17 @@ def deploy_notebook_template(w: WorkspaceClient, template_local_path: str,
     """
     from databricks.sdk.service.workspace import ImportFormat
 
+    target_folder = posixpath.normpath(target_folder)
+
     if not target_folder.startswith("/Workspace/"):
         raise ValueError(
             f"target_folder must be a Workspace path starting with /Workspace/ "
             f"(got: {target_folder}). Notebooks cannot be stored under /Volumes/."
         )
+
+    home = f"/Workspace/Users/{email}".lower()
+    if not email or not (target_folder.lower() + "/").startswith(home + "/"):
+        raise PermissionError(f"Not allowed on folder {target_folder}")
 
     target_path = f"{target_folder.rstrip('/')}/{target_filename}"
 
@@ -138,7 +146,7 @@ def deploy_notebook_template(w: WorkspaceClient, template_local_path: str,
 
 
 def deploy_notebook_set(w: WorkspaceClient, app_local_dir: str,
-                        notebooks: list, target_folder: str) -> list:
+                        notebooks: list, target_folder: str, email: str) -> list:
     """Deploys a linked SET of modular notebooks into the SAME target_folder,
     preserving each one's original filename exactly.
 
@@ -149,7 +157,7 @@ def deploy_notebook_set(w: WorkspaceClient, app_local_dir: str,
     for nb in notebooks:
         local_path = os.path.join(app_local_dir, nb["relative_path"])
         try:
-            path, was_new = deploy_notebook_template(w, local_path, target_folder, nb["filename"])
+            path, was_new = deploy_notebook_template(w, local_path, target_folder, nb["filename"], email)
             results.append({"display_name": nb["display_name"], "path": path, "was_new": was_new, "error": None})
         except Exception as e:
             results.append({"display_name": nb["display_name"], "path": None, "was_new": False, "error": str(e)})
