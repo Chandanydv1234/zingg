@@ -24,11 +24,18 @@ def get_current_user_email() -> str:
     return st.context.headers.get("X-Forwarded-Email", "")
 
 
-def list_clusters(w: WorkspaceClient):
+def _is_owner(cluster, email: str) -> bool:
+    owner = (getattr(cluster, "single_user_name", None) or "").strip().lower()
+    return bool(email) and owner == email.strip().lower()
+
+
+def list_clusters(w: WorkspaceClient, email: str):
     """Returns a list of (cluster_id, cluster_name, state) for clusters the
     current user can see, for the cluster-picker dropdown on the Get Started page."""
     clusters = []
     for c in w.clusters.list():
+        if not _is_owner(c, email):
+            continue
         clusters.append({
             "cluster_id": c.cluster_id,
             "name": c.cluster_name,

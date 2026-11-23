@@ -1,7 +1,7 @@
 import os
 import streamlit as st
 from utils.db_client import (
-    get_workspace_client, list_clusters, check_jar_installed,
+    get_workspace_client, get_current_user_email, list_clusters, check_jar_installed,
     install_jar, restart_cluster, restart_running_cluster, deploy_notebook_set,
 )
 
@@ -31,6 +31,7 @@ Set up a cluster and notebook, then run Zingg the way you always have.
 """)
 
 w = get_workspace_client()
+user_email = get_current_user_email()
 
 with st.expander("Before you start"):
     st.markdown("""
@@ -42,7 +43,7 @@ with st.expander("Before you start"):
 st.divider()
 st.subheader("1. Select your cluster")
 
-clusters = list_clusters(w)
+clusters = list_clusters(w, user_email)
 if not clusters:
     st.error("No clusters visible to this app / user.")
     st.stop()
