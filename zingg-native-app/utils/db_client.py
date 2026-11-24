@@ -136,6 +136,7 @@ def deploy_notebook_template(w: WorkspaceClient, template_local_path: str,
     except Exception:
         pass  # doesn't exist yet -- safe to write
 
+    print(f"AUDIT user={email} action=deploy_notebook path={target_path}", flush=True)
     w.workspace.mkdirs(target_folder)
 
     with open(template_local_path, "rb") as f:
