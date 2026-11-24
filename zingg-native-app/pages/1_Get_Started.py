@@ -112,7 +112,7 @@ col_a, col_b = st.columns(2)
 with col_a:
     if st.button("Start cluster (if not already running)"):
         try:
-            action = restart_cluster(w, cluster_id)
+            action = restart_cluster(w, cluster_id, user_email)
             st.success(f"Cluster {action}. It may take a few minutes to become available.")
         except Exception as e:
             st.error(f"Could not start cluster: {e}")

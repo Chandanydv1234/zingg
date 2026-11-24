@@ -78,11 +78,12 @@ def install_jar(w: WorkspaceClient, cluster_id: str, jar_volume_path: str,
     w.libraries.install(cluster_id=cluster_id, libraries=[Library(jar=jar_volume_path)])
 
 
-def restart_cluster(w: WorkspaceClient, cluster_id: str) -> str:
+def restart_cluster(w: WorkspaceClient, cluster_id: str, email: str) -> str:
     """Starts or restarts the given cluster, whichever is correct for its
     current state. Uses the SDK's own ensure_cluster_is_running() helper,
     which handles the PENDING/RUNNING/TERMINATED state distinction internally
     """
+    assert_user_owns_cluster(w, cluster_id, email)
     w.clusters.ensure_cluster_is_running(cluster_id)
     return "started (or confirmed already running)"
 
