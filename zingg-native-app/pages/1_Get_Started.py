@@ -101,7 +101,8 @@ with col2:
             bundled_jar_local_path = os.path.join(
                 os.path.dirname(os.path.dirname(os.path.abspath(__file__))), JAR_RELATIVE_PATH
             )
-            install_jar(w, cluster_id, jar_path, bundled_jar_local_path=bundled_jar_local_path)
+            install_jar(w, cluster_id, jar_path, user_email,
+                        bundled_jar_local_path=bundled_jar_local_path)
             st.success(f"Uploaded app's bundled JAR (v{JAR_VERSION}) to {jar_path} and requested install.")
             st.info("A cluster restart may be required for the JAR to load. Use the restart button below if needed.")
         except Exception as e:

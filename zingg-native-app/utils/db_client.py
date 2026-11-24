@@ -63,10 +63,12 @@ def check_jar_installed(w: WorkspaceClient, cluster_id: str, jar_volume_path: st
 
 
 def install_jar(w: WorkspaceClient, cluster_id: str, jar_volume_path: str,
-                bundled_jar_local_path: str = None) -> None:
+                email: str, bundled_jar_local_path: str = None) -> None:
     """Installs the Zingg OSS JAR on the given cluster via the Libraries API.
     """
     from databricks.sdk.service.compute import Library
+
+    assert_user_owns_cluster(w, cluster_id, email)
 
     if bundled_jar_local_path:
         with open(bundled_jar_local_path, "rb") as f:
