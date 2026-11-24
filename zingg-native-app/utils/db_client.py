@@ -30,6 +30,11 @@ def _is_owner(cluster, email: str) -> bool:
     return bool(email) and owner == email.strip().lower()
 
 
+def assert_user_owns_cluster(w: WorkspaceClient, cluster_id: str, email: str) -> None:
+    if not _is_owner(w.clusters.get(cluster_id), email):
+        raise PermissionError(f"Not allowed on cluster {cluster_id}")
+
+
 def list_clusters(w: WorkspaceClient, email: str):
     """Returns a list of (cluster_id, cluster_name, state) for clusters the
     current user can see, for the cluster-picker dropdown on the Get Started page."""
@@ -80,10 +85,11 @@ def restart_cluster(w: WorkspaceClient, cluster_id: str) -> str:
     return "started (or confirmed already running)"
 
 
-def restart_running_cluster(w: WorkspaceClient, cluster_id: str) -> str:
+def restart_running_cluster(w: WorkspaceClient, cluster_id: str, email: str) -> str:
     """Explicitly restarts a cluster that is currently running (e.g. to pick
     up a newly installed library). Only call this when the cluster is known
     to be running -- restart() is invalid on a terminated cluster."""
+    assert_user_owns_cluster(w, cluster_id, email)
     w.clusters.restart(cluster_id)
     return "restarted"
 

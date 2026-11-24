@@ -124,7 +124,7 @@ with col_b:
             st.error("Check the box above to confirm before restarting.")
         else:
             try:
-                action = restart_running_cluster(w, cluster_id)
+                action = restart_running_cluster(w, cluster_id, user_email)
                 st.success(f"Cluster {action}.")
             except Exception as e:
                 st.error(f"Could not restart cluster: {e}")
