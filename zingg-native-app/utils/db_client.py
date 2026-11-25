@@ -69,7 +69,6 @@ def install_jar(w: WorkspaceClient, cluster_id: str, jar_volume_path: str,
     from databricks.sdk.service.compute import Library
 
     assert_user_owns_cluster(w, cluster_id, email)
-    print(f"AUDIT user={email} action=install_jar cluster={cluster_id} jar={jar_volume_path}", flush=True)
 
     if bundled_jar_local_path:
         with open(bundled_jar_local_path, "rb") as f:
@@ -85,7 +84,6 @@ def restart_cluster(w: WorkspaceClient, cluster_id: str, email: str) -> str:
     which handles the PENDING/RUNNING/TERMINATED state distinction internally
     """
     assert_user_owns_cluster(w, cluster_id, email)
-    print(f"AUDIT user={email} action=start_cluster cluster={cluster_id}", flush=True)
     w.clusters.ensure_cluster_is_running(cluster_id)
     return "started (or confirmed already running)"
 
@@ -95,7 +93,6 @@ def restart_running_cluster(w: WorkspaceClient, cluster_id: str, email: str) -> 
     up a newly installed library). Only call this when the cluster is known
     to be running -- restart() is invalid on a terminated cluster."""
     assert_user_owns_cluster(w, cluster_id, email)
-    print(f"AUDIT user={email} action=restart_cluster cluster={cluster_id}", flush=True)
     w.clusters.restart(cluster_id)
     return "restarted"
 
@@ -136,7 +133,6 @@ def deploy_notebook_template(w: WorkspaceClient, template_local_path: str,
     except Exception:
         pass  # doesn't exist yet -- safe to write
 
-    print(f"AUDIT user={email} action=deploy_notebook path={target_path}", flush=True)
     w.workspace.mkdirs(target_folder)
 
     with open(template_local_path, "rb") as f:

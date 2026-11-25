@@ -60,17 +60,23 @@ st.subheader("2. Install Zingg JAR")
 
 # The Volume that holds the JAR is a declared app resource (key "volume" in
 # app.yaml), bound by the workspace admin when the app is installed. When it is
-# bound, its path arrives in ZINGG_JAR_VOLUME. If it is not bound, stop.
+# bound, its path arrives in ZINGG_JAR_VOLUME. If it is not bound (for example
+# a local run), fall back to asking for a folder.
 declared_volume = os.getenv("ZINGG_JAR_VOLUME", "").strip()
 
-if not declared_volume:
-    st.error("No Unity Catalog volume is attached to this app.")
-    st.stop()
-
-st.caption("This app installs the Zingg JAR on your cluster, "
-           "using the Unity Catalog Volume attached to this app.")
-jar_folder = declared_volume
-st.markdown(f"JAR Volume: `{jar_folder}`")
+if declared_volume:
+    st.caption("This app installs the Zingg JAR on your cluster, "
+               "using the Unity Catalog Volume attached to this app.")
+    jar_folder = declared_volume
+    st.markdown(f"JAR Volume: `{jar_folder}`")
+else:
+    st.caption("This app installs the Zingg JAR on your cluster. "
+               "Enter the folder where it should go.")
+    jar_folder = st.text_input(
+        "Destination folder for the JAR",
+        value=st.session_state.get("jar_folder", "/Volumes/zingg_catalog/zingg/artifacts"),
+    )
+st.session_state["jar_folder"] = jar_folder
 
 jar_filename = f"zingg-{JAR_VERSION}.jar"
 jar_path = f"{jar_folder.rstrip('/')}/{jar_filename}"
