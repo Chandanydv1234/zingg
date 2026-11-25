@@ -6,6 +6,7 @@ Shared Databricks SDK client and config helpers for all app pages.
 
 import io
 import os
+import posixpath
 import streamlit as st
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.core import Config
@@ -24,11 +25,23 @@ def get_current_user_email() -> str:
     return st.context.headers.get("X-Forwarded-Email", "")
 
 
-def list_clusters(w: WorkspaceClient):
+def _is_owner(cluster, email: str) -> bool:
+    owner = (getattr(cluster, "single_user_name", None) or "").strip().lower()
+    return bool(email) and owner == email.strip().lower()
+
+
+def assert_user_owns_cluster(w: WorkspaceClient, cluster_id: str, email: str) -> None:
+    if not _is_owner(w.clusters.get(cluster_id), email):
+        raise PermissionError(f"Not allowed on cluster {cluster_id}")
+
+
+def list_clusters(w: WorkspaceClient, email: str):
     """Returns a list of (cluster_id, cluster_name, state) for clusters the
     current user can see, for the cluster-picker dropdown on the Get Started page."""
     clusters = []
     for c in w.clusters.list():
+        if not _is_owner(c, email):
+            continue
         clusters.append({
             "cluster_id": c.cluster_id,
             "name": c.cluster_name,
@@ -50,10 +63,12 @@ def check_jar_installed(w: WorkspaceClient, cluster_id: str, jar_volume_path: st
 
 
 def install_jar(w: WorkspaceClient, cluster_id: str, jar_volume_path: str,
-                bundled_jar_local_path: str = None) -> None:
+                email: str, bundled_jar_local_path: str = None) -> None:
     """Installs the Zingg OSS JAR on the given cluster via the Libraries API.
     """
     from databricks.sdk.service.compute import Library
+
+    assert_user_owns_cluster(w, cluster_id, email)
 
     if bundled_jar_local_path:
         with open(bundled_jar_local_path, "rb") as f:
@@ -63,25 +78,28 @@ def install_jar(w: WorkspaceClient, cluster_id: str, jar_volume_path: str,
     w.libraries.install(cluster_id=cluster_id, libraries=[Library(jar=jar_volume_path)])
 
 
-def restart_cluster(w: WorkspaceClient, cluster_id: str) -> str:
+def restart_cluster(w: WorkspaceClient, cluster_id: str, email: str) -> str:
     """Starts or restarts the given cluster, whichever is correct for its
     current state. Uses the SDK's own ensure_cluster_is_running() helper,
     which handles the PENDING/RUNNING/TERMINATED state distinction internally
     """
+    assert_user_owns_cluster(w, cluster_id, email)
     w.clusters.ensure_cluster_is_running(cluster_id)
     return "started (or confirmed already running)"
 
 
-def restart_running_cluster(w: WorkspaceClient, cluster_id: str) -> str:
+def restart_running_cluster(w: WorkspaceClient, cluster_id: str, email: str) -> str:
     """Explicitly restarts a cluster that is currently running (e.g. to pick
     up a newly installed library). Only call this when the cluster is known
     to be running -- restart() is invalid on a terminated cluster."""
+    assert_user_owns_cluster(w, cluster_id, email)
     w.clusters.restart(cluster_id)
     return "restarted"
 
 
 def deploy_notebook_template(w: WorkspaceClient, template_local_path: str,
-                             target_folder: str, target_filename: str) -> tuple[str, bool]:
+                             target_folder: str, target_filename: str,
+                             email: str) -> tuple[str, bool]:
     """Deploys one bundled template notebook (a plain .ipynb file, tracked
     in this app's own Git repo alongside app.yaml, the JAR, etc.) to
     target_folder/target_filename in the Workspace.
@@ -95,11 +113,17 @@ def deploy_notebook_template(w: WorkspaceClient, template_local_path: str,
     """
     from databricks.sdk.service.workspace import ImportFormat
 
+    target_folder = posixpath.normpath(target_folder)
+
     if not target_folder.startswith("/Workspace/"):
         raise ValueError(
             f"target_folder must be a Workspace path starting with /Workspace/ "
             f"(got: {target_folder}). Notebooks cannot be stored under /Volumes/."
         )
+
+    home = f"/Workspace/Users/{email}".lower()
+    if not email or not (target_folder.lower() + "/").startswith(home + "/"):
+        raise PermissionError(f"Not allowed on folder {target_folder}")
 
     target_path = f"{target_folder.rstrip('/')}/{target_filename}"
 
@@ -131,7 +155,7 @@ def deploy_notebook_template(w: WorkspaceClient, template_local_path: str,
 
 
 def deploy_notebook_set(w: WorkspaceClient, app_local_dir: str,
-                        notebooks: list, target_folder: str) -> list:
+                        notebooks: list, target_folder: str, email: str) -> list:
     """Deploys a linked SET of modular notebooks into the SAME target_folder,
     preserving each one's original filename exactly.
 
@@ -142,7 +166,7 @@ def deploy_notebook_set(w: WorkspaceClient, app_local_dir: str,
     for nb in notebooks:
         local_path = os.path.join(app_local_dir, nb["relative_path"])
         try:
-            path, was_new = deploy_notebook_template(w, local_path, target_folder, nb["filename"])
+            path, was_new = deploy_notebook_template(w, local_path, target_folder, nb["filename"], email)
             results.append({"display_name": nb["display_name"], "path": path, "was_new": was_new, "error": None})
         except Exception as e:
             results.append({"display_name": nb["display_name"], "path": None, "was_new": False, "error": str(e)})
