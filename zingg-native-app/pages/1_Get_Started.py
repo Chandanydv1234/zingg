@@ -1,7 +1,7 @@
 import os
 import streamlit as st
 from utils.db_client import (
-    get_workspace_client, get_current_user_email, list_clusters, check_jar_installed,
+    get_workspace_client, get_current_user, list_clusters, check_jar_installed,
     install_jar, restart_cluster, restart_running_cluster, deploy_notebook_set,
 )
 
@@ -31,7 +31,7 @@ Set up a cluster and notebook, then run Zingg the way you always have.
 """)
 
 w = get_workspace_client()
-user_email = get_current_user_email()
+user_name, user_groups = get_current_user(w)
 
 with st.expander("Before you start"):
     st.markdown("""
@@ -43,7 +43,7 @@ with st.expander("Before you start"):
 st.divider()
 st.subheader("1. Select your cluster")
 
-clusters = list_clusters(w, user_email)
+clusters = list_clusters(w, user_name, user_groups)
 if not clusters:
     st.error("No clusters visible to this app / user.")
     st.stop()
@@ -101,7 +101,7 @@ with col2:
             bundled_jar_local_path = os.path.join(
                 os.path.dirname(os.path.dirname(os.path.abspath(__file__))), JAR_RELATIVE_PATH
             )
-            install_jar(w, cluster_id, jar_path, user_email,
+            install_jar(w, cluster_id, jar_path, user_name, user_groups,
                         bundled_jar_local_path=bundled_jar_local_path)
             st.success(f"Uploaded app's bundled JAR (v{JAR_VERSION}) to {jar_path} and requested install.")
             st.info("A cluster restart may be required for the JAR to load. Use the restart button below if needed.")
@@ -112,7 +112,7 @@ col_a, col_b = st.columns(2)
 with col_a:
     if st.button("Start cluster (if not already running)"):
         try:
-            action = restart_cluster(w, cluster_id, user_email)
+            action = restart_cluster(w, cluster_id, user_name, user_groups)
             st.success(f"Cluster {action}. It may take a few minutes to become available.")
         except Exception as e:
             st.error(f"Could not start cluster: {e}")
@@ -125,7 +125,7 @@ with col_b:
             st.error("Check the box above to confirm before restarting.")
         else:
             try:
-                action = restart_running_cluster(w, cluster_id, user_email)
+                action = restart_running_cluster(w, cluster_id, user_name, user_groups)
                 st.success(f"Cluster {action}.")
             except Exception as e:
                 st.error(f"Could not restart cluster: {e}")
@@ -155,7 +155,7 @@ if "notebook_paths" not in st.session_state:
 if st.button("Get notebooks", type="primary"):
     try:
         app_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        results = deploy_notebook_set(w, app_dir, BUNDLED_NOTEBOOKS, deploy_folder, user_email)
+        results = deploy_notebook_set(w, app_dir, BUNDLED_NOTEBOOKS, deploy_folder, user_name)
 
         for r in results:
             if r["error"]:
